@@ -49,9 +49,9 @@ appsettings.Development.json
 *.vsp
 *.vspx
 
-# Generated files
-*.g.*
-*.Designer.cs
+# Generated files (WPF/Xaml auto-generated, but not WinForms Designer files)
+*.g.cs
+*.g.i.cs
 *.generated.cs
 *_wpftmp.csproj
 
