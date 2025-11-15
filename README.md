@@ -1,0 +1,2 @@
+# TranslationAtGPT
+画面のスクリーンショットを撮影⇒GPTでOCR＆翻訳を自動で行ってくれるWindows用プログラム
