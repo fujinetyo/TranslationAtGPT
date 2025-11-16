@@ -1,9 +1,9 @@
 # TranslationAtGPT - WinFormsアプリケーション
 
 ## 概要
-ゲーム画面のスクリーンショットを取得し、OpenAI GPT-4o mini Vision APIでOCR＋翻訳を行うWindowsアプリケーション。
+ゲーム画面やアプリケーションのスクリーンショットを取得し、OpenAI GPT-4o mini Vision APIでOCR＋翻訳を行うWindowsアプリケーション。
 
-このバージョンは、UI部品のみを配置した初期バージョンです。
+Version 1.0 では、基本的なウィンドウキャプチャと翻訳機能を完全実装しています。
 
 ## プロジェクト構成
 
@@ -51,12 +51,13 @@ src/TranslationAtGPT/
 
 | コンポーネント名 | 種類 | 説明 | プロパティ |
 |---|---|---|---|
-| `exePathTextBox` | TextBox | 対象EXEファイルのパス表示 | ReadOnly=true, Anchor=Left\|Right |
-| `selectExeButton` | Button | EXE選択ダイアログを開く（未実装） | Text="参照...", Anchor=Right |
-| `captureButton` | Button | スクリーンショット取得とOCR実行（未実装） | Text="キャプチャ実行", Anchor=Right |
-| `promptTextBox` | TextBox | APIへの追加プロンプト入力 | MaxLength=200, Dock=Fill |
-| `resultTextBox` | TextBox | OCR+翻訳結果の表示 | ReadOnly=true, Multiline=true, ScrollBars=Vertical, Dock=Fill |
-| `logTextBox` | TextBox | 処理ログの表示 | ReadOnly=true, Multiline=true, ScrollBars=Vertical, Dock=Fill, 固定高さ |
+| `windowComboBox` | ComboBox | ウィンドウ選択ドロップダウン | DropDownStyle=DropDownList |
+| `selectExeButton` | Button | ウィンドウ一覧を更新 | Text="更新" |
+| `captureButton` | Button | スクリーンショット取得とOCR実行 | Text="キャプチャ実行" |
+| `promptTextBox` | TextBox | APIへの追加プロンプト入力 | MaxLength=200 |
+| `thumbnailPictureBox` | PictureBox | キャプチャ画像のサムネイル表示 | SizeMode=Zoom |
+| `resultTextBox` | TextBox | OCR+翻訳結果の表示 | ReadOnly=true, Multiline=true, ScrollBars=Vertical |
+| `logTextBox` | TextBox | 処理ログの表示 | ReadOnly=true, Multiline=true, ScrollBars=Vertical |
 
 ### フォームプロパティ
 
@@ -88,28 +89,35 @@ dotnet run
 bin/Debug/net8.0-windows/TranslationAtGPT.exe
 ```
 
-## 実装状況
+## 実装状況（Version 1.0）
 
 ### ✅ 完了
 - [x] プロジェクト構成の作成
 - [x] 全UIコンポーネントの配置
 - [x] レイアウトの設定（TableLayoutPanel使用）
 - [x] フォームプロパティの設定
-- [x] ビルド確認
+- [x] ウィンドウ一覧取得機能
+- [x] スクリーンショット取得機能
+- [x] OpenAI API通信機能
+- [x] OCR＋翻訳処理
+- [x] ログ出力機能
+- [x] 設定ファイル（ini）の読み込み
+- [x] サムネイル表示機能
+- [x] 画像自動縮小処理（2000px以上）
+- [x] キャプチャ画像の自動保存
 
-### ⏳ 未実装（今後の対応）
-- [ ] ファイル選択ダイアログ機能（SelectExeButton）
-- [ ] スクリーンショット取得機能（CaptureButton）
-- [ ] OpenAI API通信機能
-- [ ] OCR＋翻訳処理
-- [ ] ログ出力機能
-- [ ] 設定ファイル（ini）の読み込み/保存
+### 🔄 今後の拡張予定
+- [ ] モデル選択機能（GPT-4o等）
+- [ ] ホットキー登録機能
+- [ ] 履歴保存機能
+- [ ] ダークモード対応
 
 ## 注意事項
 
-- このバージョンはUI表示のみで、ボタンクリック等の動作は実装されていません
-- Linux環境ではビルドは可能ですが、実行にはWindows Desktop Runtimeが必要です
-- 実際の動作確認はWindows環境で行ってください
+- Windows専用アプリケーションです（.NET 8.0-windows）
+- OpenAI APIキーが必要です（settings.iniに設定）
+- インターネット接続が必要です（API通信のため）
+- キャプチャした画像は`captures`ディレクトリに保存されます
 
 ## 技術仕様
 
