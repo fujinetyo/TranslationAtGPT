@@ -125,4 +125,69 @@ public static class WindowCaptureService
 
         return filepath;
     }
+
+    /// <summary>
+    /// 画像を指定サイズ以下に縮小する（アスペクト比維持）
+    /// </summary>
+    /// <param name="originalImage">元画像</param>
+    /// <param name="maxSize">最大サイズ（縦横の最大値）</param>
+    /// <param name="wasResized">縮小が行われたかどうか</param>
+    /// <returns>縮小後の画像（縮小不要な場合は元画像のコピー）</returns>
+    public static Bitmap ResizeImageIfNeeded(Bitmap originalImage, int maxSize, out bool wasResized)
+    {
+        wasResized = false;
+        int originalWidth = originalImage.Width;
+        int originalHeight = originalImage.Height;
+
+        // 画像サイズがmaxSize以下の場合は何もしない
+        if (originalWidth <= maxSize && originalHeight <= maxSize)
+        {
+            return new Bitmap(originalImage);
+        }
+
+        wasResized = true;
+
+        // アスペクト比を維持して新しいサイズを計算
+        double scale = Math.Min((double)maxSize / originalWidth, (double)maxSize / originalHeight);
+        int newWidth = (int)(originalWidth * scale);
+        int newHeight = (int)(originalHeight * scale);
+
+        // 新しいBitmapを作成して縮小
+        var resizedImage = new Bitmap(newWidth, newHeight);
+        using (var graphics = Graphics.FromImage(resizedImage))
+        {
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+        }
+
+        return resizedImage;
+    }
+
+    /// <summary>
+    /// 画像をサムネイルサイズに縮小する
+    /// </summary>
+    /// <param name="originalImage">元画像</param>
+    /// <param name="maxWidth">最大幅</param>
+    /// <param name="maxHeight">最大高さ</param>
+    /// <returns>サムネイル画像</returns>
+    public static Bitmap CreateThumbnail(Bitmap originalImage, int maxWidth, int maxHeight)
+    {
+        int originalWidth = originalImage.Width;
+        int originalHeight = originalImage.Height;
+
+        // アスペクト比を維持して新しいサイズを計算
+        double scale = Math.Min((double)maxWidth / originalWidth, (double)maxHeight / originalHeight);
+        int newWidth = (int)(originalWidth * scale);
+        int newHeight = (int)(originalHeight * scale);
+
+        // 新しいBitmapを作成して縮小
+        var thumbnail = new Bitmap(newWidth, newHeight);
+        using (var graphics = Graphics.FromImage(thumbnail))
+        {
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+        }
+
+        return thumbnail;
+    }
 }

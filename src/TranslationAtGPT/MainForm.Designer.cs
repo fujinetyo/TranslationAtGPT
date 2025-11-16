@@ -34,14 +34,18 @@ partial class MainForm
         captureButton = new Button();
         promptTextBox = new TextBox();
         resultTextBox = new TextBox();
+        thumbnailPictureBox = new PictureBox();
         logTextBox = new TextBox();
         tableLayoutPanel = new TableLayoutPanel();
         topPanel = new Panel();
+        resultPanel = new Panel();
         promptLabel = new Label();
         resultLabel = new Label();
 
         tableLayoutPanel.SuspendLayout();
         topPanel.SuspendLayout();
+        resultPanel.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)thumbnailPictureBox).BeginInit();
         SuspendLayout();
 
         // 
@@ -121,16 +125,39 @@ partial class MainForm
         resultLabel.Text = "OCR+翻訳結果:";
 
         // 
+        // resultPanel - 翻訳結果とサムネイルを含むパネル
+        // 
+        resultPanel.Controls.Add(resultTextBox);
+        resultPanel.Controls.Add(thumbnailPictureBox);
+        resultPanel.Dock = DockStyle.Fill;
+        resultPanel.Location = new Point(3, 105);
+        resultPanel.Name = "resultPanel";
+        resultPanel.Size = new Size(794, 250);
+        resultPanel.TabIndex = 6;
+
+        // 
         // resultTextBox - OCR+翻訳結果表示（ReadOnly、複数行）
         // 
         resultTextBox.Dock = DockStyle.Fill;
-        resultTextBox.Location = new Point(3, 105);
+        resultTextBox.Location = new Point(0, 0);
         resultTextBox.Multiline = true;
         resultTextBox.Name = "resultTextBox";
         resultTextBox.ReadOnly = true;
         resultTextBox.ScrollBars = ScrollBars.Vertical;
-        resultTextBox.Size = new Size(794, 250);
+        resultTextBox.Size = new Size(594, 250);
         resultTextBox.TabIndex = 4;
+        resultTextBox.WordWrap = true;
+
+        // 
+        // thumbnailPictureBox - サムネイル表示
+        // 
+        thumbnailPictureBox.BorderStyle = BorderStyle.FixedSingle;
+        thumbnailPictureBox.Dock = DockStyle.Right;
+        thumbnailPictureBox.Location = new Point(594, 0);
+        thumbnailPictureBox.Name = "thumbnailPictureBox";
+        thumbnailPictureBox.Size = new Size(200, 250);
+        thumbnailPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+        thumbnailPictureBox.TabIndex = 5;
 
         // 
         // logTextBox - ログ表示（ReadOnly、複数行、固定5行）
@@ -153,7 +180,7 @@ partial class MainForm
         tableLayoutPanel.Controls.Add(promptLabel, 0, 1);
         tableLayoutPanel.Controls.Add(promptTextBox, 0, 2);
         tableLayoutPanel.Controls.Add(resultLabel, 0, 3);
-        tableLayoutPanel.Controls.Add(resultTextBox, 0, 4);
+        tableLayoutPanel.Controls.Add(resultPanel, 0, 4);
         tableLayoutPanel.Controls.Add(logTextBox, 0, 5);
         tableLayoutPanel.Dock = DockStyle.Fill;
         tableLayoutPanel.Location = new Point(0, 0);
@@ -183,6 +210,9 @@ partial class MainForm
         tableLayoutPanel.PerformLayout();
         topPanel.ResumeLayout(false);
         topPanel.PerformLayout();
+        resultPanel.ResumeLayout(false);
+        resultPanel.PerformLayout();
+        ((System.ComponentModel.ISupportInitialize)thumbnailPictureBox).EndInit();
         ResumeLayout(false);
     }
 
@@ -194,9 +224,11 @@ partial class MainForm
     private Button captureButton;
     private TextBox promptTextBox;
     private TextBox resultTextBox;
+    private PictureBox thumbnailPictureBox;
     private TextBox logTextBox;
     private TableLayoutPanel tableLayoutPanel;
     private Panel topPanel;
+    private Panel resultPanel;
     private Label promptLabel;
     private Label resultLabel;
 }
