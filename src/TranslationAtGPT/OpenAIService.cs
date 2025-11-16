@@ -56,7 +56,24 @@ public class OpenAIService
         // レスポンスから翻訳テキストを抽出
         string translatedText = completion.Content[0].Text;
 
+        // 改行コードを正規化（LF → CRLF on Windows）
+        translatedText = NormalizeLineEndings(translatedText);
+
         return translatedText;
+    }
+
+    /// <summary>
+    /// 改行コードを Environment.NewLine に正規化する
+    /// </summary>
+    /// <param name="text">正規化対象のテキスト</param>
+    /// <returns>正規化されたテキスト</returns>
+    private string NormalizeLineEndings(string text)
+    {
+        // まず既存の CRLF を LF に統一し、その後 Environment.NewLine に変換
+        return text
+            .Replace("\r\n", "\n")
+            .Replace("\r", "\n")
+            .Replace("\n", Environment.NewLine);
     }
 
     /// <summary>
