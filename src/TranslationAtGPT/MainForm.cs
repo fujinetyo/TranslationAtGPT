@@ -108,6 +108,10 @@ public partial class MainForm : Form
             
             AddLog($"保存完了: {Path.GetFileName(savedPath)}");
 
+            // サムネイルを更新
+            UpdateThumbnail(bitmap);
+            AddLog("[INFO] サムネイルを更新しました");
+
             // 設定ファイルを読み込み
             string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
             Settings settings;
@@ -132,22 +136,51 @@ public partial class MainForm : Form
                 return;
             }
 
-            // OpenAI APIに翻訳リクエストを送信
-            AddLog("OpenAI APIにリクエストを送信中...");
-            
-            var openAIService = new OpenAIService(settings.ApiKey, settings.DefaultPrompt);
-            string additionalPrompt = promptTextBox.Text;
-            
-            string translatedText = await openAIService.TranslateImageAsync(bitmap, additionalPrompt);
-            
-            // 翻訳結果を表示
-            resultTextBox.Text = translatedText;
-            AddLog("翻訳結果を受信しました");
+            // 画像圧縮処理: 2000px以上の場合は縮小
+            bool wasResized;
+            using (var resizedImage = WindowCaptureService.ResizeImageIfNeeded(bitmap, 2000, out wasResized))
+            {
+                if (wasResized)
+                {
+                    int originalMax = Math.Max(bitmap.Width, bitmap.Height);
+                    int newMax = Math.Max(resizedImage.Width, resizedImage.Height);
+                    AddLog($"[INFO] 画像を縮小しました: 元サイズ={originalMax}px → 新サイズ={newMax}px");
+                }
+
+                // OpenAI APIに翻訳リクエストを送信
+                AddLog("OpenAI APIにリクエストを送信中...");
+                
+                var openAIService = new OpenAIService(settings.ApiKey, settings.DefaultPrompt);
+                string additionalPrompt = promptTextBox.Text;
+                
+                string translatedText = await openAIService.TranslateImageAsync(resizedImage, additionalPrompt);
+                
+                // 翻訳結果を表示
+                resultTextBox.Text = translatedText;
+                AddLog("翻訳結果を受信しました");
+            }
         }
         catch (Exception ex)
         {
             AddLog($"エラー: {ex.Message}");
             MessageBox.Show($"処理に失敗しました。\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    /// <summary>
+    /// サムネイルを更新
+    /// </summary>
+    private void UpdateThumbnail(Bitmap originalImage)
+    {
+        // 既存のサムネイルがあれば破棄
+        if (thumbnailPictureBox.Image != null)
+        {
+            thumbnailPictureBox.Image.Dispose();
+            thumbnailPictureBox.Image = null;
+        }
+
+        // PictureBoxのサイズに合わせたサムネイルを作成
+        var thumbnail = WindowCaptureService.CreateThumbnail(originalImage, thumbnailPictureBox.Width, thumbnailPictureBox.Height);
+        thumbnailPictureBox.Image = thumbnail;
     }
 }
