@@ -12,6 +12,13 @@ public partial class MainForm : Form
     {
         InitializeComponent();
         
+        // アイコンを設定
+        string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "icon.ico");
+        if (File.Exists(iconPath))
+        {
+            Icon = new Icon(iconPath);
+        }
+        
         // 初期化時のプレースホルダ設定
         windowComboBox.Items.Add("ウィンドウを選択してください");
         windowComboBox.SelectedIndex = 0;

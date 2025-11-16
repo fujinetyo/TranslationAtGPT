@@ -206,13 +206,6 @@ partial class MainForm
         MinimumSize = new Size(600, 400);
         Name = "MainForm";
         Text = "TranslationAtGPT";
-        
-        // アイコンを設定
-        string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "icon.ico");
-        if (File.Exists(iconPath))
-        {
-            Icon = new Icon(iconPath);
-        }
         tableLayoutPanel.ResumeLayout(false);
         tableLayoutPanel.PerformLayout();
         topPanel.ResumeLayout(false);
