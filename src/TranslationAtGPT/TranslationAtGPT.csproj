@@ -8,6 +8,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Copyright>Copyright © 2025</Copyright>
+    <Company>fujinetyo</Company>
+    <Product>TranslationAtGPT</Product>
+    <Description>画面のスクリーンショットを撮影してGPTでOCR＆翻訳を自動で行うWindows用プログラム</Description>
   </PropertyGroup>
 
   <ItemGroup>
