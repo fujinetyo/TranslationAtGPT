@@ -29,7 +29,7 @@ partial class MainForm
     private void InitializeComponent()
     {
         // UI コンポーネントの初期化
-        exePathTextBox = new TextBox();
+        windowComboBox = new ComboBox();
         selectExeButton = new Button();
         captureButton = new Button();
         promptTextBox = new TextBox();
@@ -45,11 +45,11 @@ partial class MainForm
         SuspendLayout();
 
         // 
-        // topPanel - 上段：ExePathTextBox + ボタン配置
+        // topPanel - 上段：WindowComboBox + ボタン配置
         // 
         topPanel.Controls.Add(captureButton);
         topPanel.Controls.Add(selectExeButton);
-        topPanel.Controls.Add(exePathTextBox);
+        topPanel.Controls.Add(windowComboBox);
         topPanel.Dock = DockStyle.Fill;
         topPanel.Location = new Point(3, 3);
         topPanel.Name = "topPanel";
@@ -57,25 +57,26 @@ partial class MainForm
         topPanel.TabIndex = 0;
 
         // 
-        // exePathTextBox - 対象EXEパス表示（ReadOnly）
+        // windowComboBox - 対象ウィンドウ選択
         // 
-        exePathTextBox.Location = new Point(3, 6);
-        exePathTextBox.Name = "exePathTextBox";
-        exePathTextBox.ReadOnly = true;
-        exePathTextBox.Size = new Size(500, 23);
-        exePathTextBox.TabIndex = 0;
-        exePathTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        windowComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        windowComboBox.Location = new Point(3, 6);
+        windowComboBox.Name = "windowComboBox";
+        windowComboBox.Size = new Size(500, 23);
+        windowComboBox.TabIndex = 0;
+        windowComboBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
         // 
-        // selectExeButton - 参照...ボタン
+        // selectExeButton - 更新ボタン
         // 
         selectExeButton.Location = new Point(509, 4);
         selectExeButton.Name = "selectExeButton";
         selectExeButton.Size = new Size(100, 27);
         selectExeButton.TabIndex = 1;
-        selectExeButton.Text = "参照...";
+        selectExeButton.Text = "更新";
         selectExeButton.UseVisualStyleBackColor = true;
         selectExeButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        selectExeButton.Click += SelectExeButton_Click;
 
         // 
         // captureButton - キャプチャ実行ボタン
@@ -87,6 +88,7 @@ partial class MainForm
         captureButton.Text = "キャプチャ実行";
         captureButton.UseVisualStyleBackColor = true;
         captureButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        captureButton.Click += CaptureButton_Click;
 
         // 
         // promptLabel - プロンプト入力ラベル
@@ -187,7 +189,7 @@ partial class MainForm
     #endregion
 
     // UI コンポーネントのフィールド宣言
-    private TextBox exePathTextBox;
+    private ComboBox windowComboBox;
     private Button selectExeButton;
     private Button captureButton;
     private TextBox promptTextBox;
