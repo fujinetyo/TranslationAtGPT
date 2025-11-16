@@ -77,9 +77,9 @@ public partial class MainForm : Form
     }
 
     /// <summary>
-    /// キャプチャ実行ボタンクリックイベント：スクリーンショット撮影
+    /// キャプチャ実行ボタンクリックイベント：スクリーンショット撮影＋翻訳
     /// </summary>
-    private void CaptureButton_Click(object? sender, EventArgs e)
+    private async void CaptureButton_Click(object? sender, EventArgs e)
     {
         try
         {
@@ -107,12 +107,47 @@ public partial class MainForm : Form
             string savedPath = WindowCaptureService.SaveScreenshot(bitmap, capturesDir);
             
             AddLog($"保存完了: {Path.GetFileName(savedPath)}");
-            MessageBox.Show($"スクリーンショットを保存しました。\n{savedPath}", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            // 設定ファイルを読み込み
+            string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+            Settings settings;
+            
+            try
+            {
+                settings = Settings.LoadFromIni(settingsPath);
+                AddLog("設定ファイル読み込み完了");
+            }
+            catch (FileNotFoundException)
+            {
+                AddLog("エラー: settings.iniファイルが見つかりません");
+                MessageBox.Show("settings.iniファイルが見つかりません。\n実行ファイルと同じディレクトリに配置してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // APIキーの検証
+            if (string.IsNullOrWhiteSpace(settings.ApiKey))
+            {
+                AddLog("エラー: APIキーが設定されていません");
+                MessageBox.Show("settings.iniにAPIキーが設定されていません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // OpenAI APIに翻訳リクエストを送信
+            AddLog("OpenAI APIにリクエストを送信中...");
+            
+            var openAIService = new OpenAIService(settings.ApiKey, settings.DefaultPrompt);
+            string additionalPrompt = promptTextBox.Text;
+            
+            string translatedText = await openAIService.TranslateImageAsync(bitmap, additionalPrompt);
+            
+            // 翻訳結果を表示
+            resultTextBox.Text = translatedText;
+            AddLog("翻訳結果を受信しました");
         }
         catch (Exception ex)
         {
             AddLog($"エラー: {ex.Message}");
-            MessageBox.Show($"スクリーンショットの撮影に失敗しました。\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"処理に失敗しました。\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }
