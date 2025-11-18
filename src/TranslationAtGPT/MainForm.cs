@@ -105,7 +105,11 @@ public partial class MainForm : Form
             if (bitmap == null)
             {
                 AddLog("エラー: ウィンドウのキャプチャに失敗しました");
-                MessageBox.Show("ウィンドウのキャプチャに失敗しました。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AddLog("[警告] 最小化されたウィンドウはキャプチャできない場合があります");
+                MessageBox.Show("ウィンドウのキャプチャに失敗しました。\n\n" +
+                              "最小化されたウィンドウはシステムの仕様により正常にキャプチャできない場合があります。\n" +
+                              "ウィンドウを通常の状態に戻してから再度お試しください。", 
+                              "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             
