@@ -29,6 +29,31 @@ public static class WindowCaptureService
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+    /// <summary>
+    /// ウィンドウが最小化されているかどうかを判定
+    /// </summary>
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    /// <summary>
+    /// ウィンドウを元のサイズに復元
+    /// </summary>
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    /// <summary>
+    /// PrintWindow API: 背面ウィンドウのキャプチャに使用
+    /// </summary>
+    [DllImport("user32.dll")]
+    private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
+
+    /// <summary>
+    /// DWM (Desktop Window Manager) の拡張フレーム境界を取得
+    /// Windows Vista以降で使用可能
+    /// </summary>
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT
     {
@@ -37,6 +62,15 @@ public static class WindowCaptureService
         public int Right;
         public int Bottom;
     }
+
+    // ShowWindow用の定数
+    private const int SW_RESTORE = 9;
+
+    // PrintWindow用のフラグ
+    private const uint PW_RENDERFULLCONTENT = 0x00000002;
+
+    // DWM属性の定数
+    private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
 
     #endregion
 
@@ -76,14 +110,40 @@ public static class WindowCaptureService
 
     /// <summary>
     /// 指定したウィンドウのスクリーンショットを撮影
+    /// 最小化されたウィンドウにも対応
     /// </summary>
     /// <param name="windowHandle">対象ウィンドウハンドル</param>
-    /// <returns>キャプチャした画像（Bitmap）</returns>
+    /// <returns>キャプチャした画像（Bitmap）。取得できない場合はnull</returns>
     public static Bitmap? CaptureWindow(IntPtr windowHandle)
     {
+        // ウィンドウが最小化されているかチェック
+        bool isMinimized = IsIconic(windowHandle);
+
         // ウィンドウの矩形を取得
-        if (!GetWindowRect(windowHandle, out RECT rect))
-            return null;
+        // 最小化ウィンドウの場合、DWMの拡張フレーム境界を試行
+        RECT rect;
+        if (isMinimized)
+        {
+            // DWM APIを使用して拡張フレーム境界を取得（Windows Vista以降）
+            int result = DwmGetWindowAttribute(windowHandle, DWMWA_EXTENDED_FRAME_BOUNDS, out rect, Marshal.SizeOf(typeof(RECT)));
+            
+            // DWM APIが失敗した場合は通常のGetWindowRectを試行
+            if (result != 0)
+            {
+                if (!GetWindowRect(windowHandle, out rect))
+                {
+                    // 最小化ウィンドウで矩形取得に失敗した場合はnullを返す
+                    // （最小化アイコンの矩形が取得される可能性があるため、実際のコンテンツは取得不可）
+                    return null;
+                }
+            }
+        }
+        else
+        {
+            // 通常のウィンドウは従来通りGetWindowRectを使用
+            if (!GetWindowRect(windowHandle, out rect))
+                return null;
+        }
 
         int width = rect.Right - rect.Left;
         int height = rect.Bottom - rect.Top;
@@ -92,14 +152,82 @@ public static class WindowCaptureService
         if (width <= 0 || height <= 0)
             return null;
 
-        // スクリーンショットを撮影
+        // 最小化ウィンドウの場合、PrintWindow APIを使用
+        if (isMinimized)
+        {
+            return CaptureMinimizedWindow(windowHandle, width, height);
+        }
+
+        // 通常のウィンドウの場合、PrintWindowを優先的に試行（背面ウィンドウ対応）
         var bitmap = new Bitmap(width, height);
         using (var graphics = Graphics.FromImage(bitmap))
         {
-            graphics.CopyFromScreen(rect.Left, rect.Top, 0, 0, new Size(width, height));
-        }
+            IntPtr hdc = graphics.GetHdc();
+            try
+            {
+                // PrintWindowでキャプチャを試行
+                bool success = PrintWindow(windowHandle, hdc, PW_RENDERFULLCONTENT);
+                graphics.ReleaseHdc(hdc);
 
-        return bitmap;
+                if (success)
+                {
+                    return bitmap;
+                }
+
+                // PrintWindowが失敗した場合、CopyFromScreenを使用（前面ウィンドウのみ）
+                graphics.CopyFromScreen(rect.Left, rect.Top, 0, 0, new Size(width, height));
+                return bitmap;
+            }
+            catch
+            {
+                graphics.ReleaseHdc(hdc);
+                bitmap.Dispose();
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 最小化されたウィンドウのキャプチャを試行
+    /// </summary>
+    /// <param name="windowHandle">対象ウィンドウハンドル</param>
+    /// <param name="width">キャプチャ幅</param>
+    /// <param name="height">キャプチャ高さ</param>
+    /// <returns>キャプチャした画像（Bitmap）。取得できない場合はnull</returns>
+    private static Bitmap? CaptureMinimizedWindow(IntPtr windowHandle, int width, int height)
+    {
+        // 最小化ウィンドウの場合、PrintWindow APIを使用してキャプチャを試みる
+        // 注意：最小化状態ではウィンドウの内容が保持されていない場合があり、
+        // その場合は黒い画面やエラーになる可能性がある
+        
+        var bitmap = new Bitmap(width, height);
+        using (var graphics = Graphics.FromImage(bitmap))
+        {
+            IntPtr hdc = graphics.GetHdc();
+            try
+            {
+                // PrintWindowでキャプチャを試行
+                bool success = PrintWindow(windowHandle, hdc, PW_RENDERFULLCONTENT);
+                graphics.ReleaseHdc(hdc);
+
+                if (!success)
+                {
+                    // PrintWindowが失敗した場合はnullを返す
+                    bitmap.Dispose();
+                    return null;
+                }
+
+                // ビットマップが完全に黒（または白）の場合、実際の内容が取得できていない可能性
+                // ただし、真っ黒な画面も有効なキャプチャである可能性があるため、そのまま返す
+                return bitmap;
+            }
+            catch
+            {
+                graphics.ReleaseHdc(hdc);
+                bitmap.Dispose();
+                return null;
+            }
+        }
     }
 
     /// <summary>
