@@ -167,6 +167,12 @@ public partial class MainForm : Form
                 AddLog("翻訳結果を受信しました");
             }
         }
+        catch (MinimizedWindowCaptureException ex)
+        {
+            // 最小化ウィンドウのキャプチャ失敗を明確に通知
+            AddLog($"エラー: ウィンドウが最小化されています");
+            MessageBox.Show(ex.Message, "最小化ウィンドウのキャプチャ不可", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
         catch (Exception ex)
         {
             AddLog($"エラー: {ex.Message}");
