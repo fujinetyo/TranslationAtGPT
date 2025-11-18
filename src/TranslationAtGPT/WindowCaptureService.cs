@@ -6,6 +6,16 @@ using System.Drawing.Imaging;
 namespace TranslationAtGPT;
 
 /// <summary>
+/// 最小化ウィンドウのキャプチャ失敗を示す例外クラス
+/// </summary>
+public class MinimizedWindowCaptureException : Exception
+{
+    public MinimizedWindowCaptureException(string message) : base(message)
+    {
+    }
+}
+
+/// <summary>
 /// ウィンドウキャプチャ機能を提供するサービスクラス
 /// </summary>
 public static class WindowCaptureService
@@ -19,6 +29,9 @@ public static class WindowCaptureService
 
     [DllImport("user32.dll")]
     private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
@@ -94,7 +107,10 @@ public static class WindowCaptureService
             if (string.IsNullOrWhiteSpace(title))
                 return true;
 
-            windows.Add(new WindowInfo(title, hWnd));
+            // 最小化状態を判定
+            bool isMinimized = IsIconic(hWnd);
+
+            windows.Add(new WindowInfo(title, hWnd, isMinimized));
             return true;
         }, IntPtr.Zero);
 
@@ -107,8 +123,17 @@ public static class WindowCaptureService
     /// </summary>
     /// <param name="windowHandle">対象ウィンドウハンドル</param>
     /// <returns>キャプチャした画像（Bitmap）</returns>
+    /// <exception cref="MinimizedWindowCaptureException">ウィンドウが最小化されている場合</exception>
     public static Bitmap? CaptureWindow(IntPtr windowHandle)
     {
+        // 最小化ウィンドウは正常にキャプチャできないため、チェックして例外を投げる
+        if (IsIconic(windowHandle))
+        {
+            throw new MinimizedWindowCaptureException(
+                "最小化されているウィンドウはキャプチャできません。\n" +
+                "ウィンドウを元のサイズに戻してから再度お試しください。");
+        }
+
         // ウィンドウの矩形を取得
         if (!GetWindowRect(windowHandle, out RECT rect))
             return null;
