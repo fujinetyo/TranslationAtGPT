@@ -53,6 +53,29 @@ public static class WindowCaptureService
     /// </summary>
     [DllImport("dwmapi.dll")]
     private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
+    [DllImport("user32.dll")]
+    private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetDC(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr SelectObject(IntPtr hdc, IntPtr hgdiobj);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteDC(IntPtr hdc);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT
@@ -71,6 +94,8 @@ public static class WindowCaptureService
 
     // DWM属性の定数
     private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+    private const uint PW_CLIENTONLY = 0x1;
+    private const uint PW_RENDERFULLCONTENT = 0x2;
 
     #endregion
 
@@ -111,6 +136,7 @@ public static class WindowCaptureService
     /// <summary>
     /// 指定したウィンドウのスクリーンショットを撮影
     /// 最小化されたウィンドウにも対応
+    /// PrintWindow APIを使用して背面ウィンドウでもキャプチャ可能
     /// </summary>
     /// <param name="windowHandle">対象ウィンドウハンドル</param>
     /// <returns>キャプチャした画像（Bitmap）。取得できない場合はnull</returns>
@@ -184,6 +210,61 @@ public static class WindowCaptureService
                 bitmap.Dispose();
                 throw;
             }
+        // ウィンドウのデバイスコンテキストを取得
+        IntPtr windowDC = GetDC(windowHandle);
+        if (windowDC == IntPtr.Zero)
+            return null;
+
+        try
+        {
+            // 互換性のあるデバイスコンテキストとビットマップを作成
+            IntPtr memoryDC = CreateCompatibleDC(windowDC);
+            if (memoryDC == IntPtr.Zero)
+                return null;
+
+            try
+            {
+                IntPtr hBitmap = CreateCompatibleBitmap(windowDC, width, height);
+                if (hBitmap == IntPtr.Zero)
+                    return null;
+
+                try
+                {
+                    // ビットマップをデバイスコンテキストに選択
+                    IntPtr oldBitmap = SelectObject(memoryDC, hBitmap);
+
+                    // PrintWindow APIを使用してウィンドウの内容をキャプチャ
+                    // PW_RENDERFULLCONTENT フラグで完全なコンテンツをレンダリング
+                    bool printResult = PrintWindow(windowHandle, memoryDC, PW_RENDERFULLCONTENT);
+
+                    // 元のビットマップを復元
+                    SelectObject(memoryDC, oldBitmap);
+
+                    if (!printResult)
+                    {
+                        // PrintWindowが失敗した場合は従来の方法にフォールバック
+                        DeleteObject(hBitmap);
+                        return FallbackCaptureFromScreen(rect, width, height);
+                    }
+
+                    // HBITMAPからBitmapオブジェクトを作成
+                    Bitmap bitmap = Image.FromHbitmap(hBitmap);
+                    
+                    return bitmap;
+                }
+                finally
+                {
+                    DeleteObject(hBitmap);
+                }
+            }
+            finally
+            {
+                DeleteDC(memoryDC);
+            }
+        }
+        finally
+        {
+            ReleaseDC(windowHandle, windowDC);
         }
     }
 
@@ -227,6 +308,22 @@ public static class WindowCaptureService
                 bitmap.Dispose();
                 return null;
             }
+    /// フォールバック用：従来のCopyFromScreenを使用したキャプチャ
+    /// </summary>
+    private static Bitmap? FallbackCaptureFromScreen(RECT rect, int width, int height)
+    {
+        try
+        {
+            var bitmap = new Bitmap(width, height);
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                graphics.CopyFromScreen(rect.Left, rect.Top, 0, 0, new Size(width, height));
+            }
+            return bitmap;
+        }
+        catch
+        {
+            return null;
         }
     }
 
