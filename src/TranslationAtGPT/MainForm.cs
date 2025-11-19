@@ -52,6 +52,9 @@ public partial class MainForm : Form
         {
             AddLog("ウィンドウ一覧取得を開始...");
             
+            // 現在選択されているウィンドウ情報を保存（存在する場合）
+            WindowInfo? previouslySelected = windowComboBox.SelectedItem as WindowInfo;
+            
             // ウィンドウ一覧を取得
             var windows = WindowCaptureService.GetCaptureableWindows();
             
@@ -72,7 +75,23 @@ public partial class MainForm : Form
                     windowComboBox.Items.Add(window);
                 }
                 
-                windowComboBox.SelectedIndex = 0;
+                // 前回選択されていたウィンドウを再選択
+                int selectedIndex = 0;
+                if (previouslySelected != null)
+                {
+                    // ハンドルで一致するウィンドウを検索
+                    for (int i = 0; i < windows.Count; i++)
+                    {
+                        if (windows[i].Handle == previouslySelected.Handle)
+                        {
+                            selectedIndex = i;
+                            AddLog($"前回選択ウィンドウを保持: {windows[i].Title}");
+                            break;
+                        }
+                    }
+                }
+                
+                windowComboBox.SelectedIndex = selectedIndex;
                 AddLog($"取得完了: {windows.Count}個のウィンドウを検出");
             }
         }
